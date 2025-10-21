@@ -9,8 +9,8 @@ input                                 read_finish             ,
 input                                 write_finish            ,
 
 output     				[1:0]      Sdram_index,            //读写SDRAM的索引       
-output reg 				[1:0]      read_ch,                //读端口选择信号
-output reg 				[1:0]      write_ch,               //写端口选择信号
+output   				[1:0]      read_ch,                //读端口选择信号
+output   				[1:0]      write_ch,               //写端口选择信号
 output     				[31:0]     sd_card_bmp_read_addr  //SD卡的读地址
 );
 
@@ -24,16 +24,13 @@ reg 							   read_finish_sync2;
 reg 							   write_finish_sync1;
 reg 							   write_finish_sync2;
 
-wire 				[9:0]          SD_card_index;
-wire 				[1:0]          SDRAM_index;
-wire 				[3:0]          move_type;      //操作类型
 
-assign move_type = data_out[3:0];
-assign SDRAM_index = data_out[5:4];
-assign SD_card_index = data_out[15:6];
-assign sd_card_bmp_read_addr = (SD_card_index - 1)*1800 + 8484;         //这个地址是随便加的吧
+// assign move_type = data_out[3:0];
+// assign SDRAM_index = data_out[5:4];
+// assign SD_card_index = data_out[15:6];
+// assign sd_card_bmp_read_addr = (SD_card_index - 1)*1800 + 8484;         //这个地址是随便加的吧
 
-assign data_out = data_out_b[47:16];
+// assign data_out = data_out_b[47:16];
 
 //对write或者read_finish延时两个时钟
 always @(posedge udp_rx_clk or negedge reset) begin
@@ -48,29 +45,6 @@ always @(posedge udp_rx_clk or negedge reset) begin
         read_finish_sync2 <= read_finish_sync1;
         write_finish_sync2 <= write_finish_sync1;
     end
-end
-
-always@(*)begin
-    case(move_type)
-    4'd0:begin      //默认空类型
-        read_ch = 2'd0;
-        write_ch = 2'd0;
-    end
-    4'd1:begin      //camera ---> sdram
-        read_ch = 2'd0;
-        write_ch = 2'd1;
-    end
-    4'd2:begin      //sdcard ---> sdram
-        read_ch = 2'd0;
-        write_ch = 2'd2;
-    end
-    // 4'd3:begin      //sdram ---> hdmi //这个还不需要
-    // end
-    default:begin
-        read_ch = 2'd0;
-        write_ch = 2'd0;
-    end
-    endcase
 end
 	
 always @(posedge udp_rx_clk or negedge reset)
@@ -116,24 +90,18 @@ else if(cnt == (app_rx_data_length-1))begin
         data_out_b <= data_out_a;
     end
 end
+   
 
 decode u1_decode(
-    input                   clk,                    //时钟
-    input                   rst_n,                  //复位信号
-    input       [31:0]      command_byte,           //命令数据
+.clk                    (udp_rx_clk),                    //时钟
+.rst_n                  (reset),                  //复位信号
+.command_byte           (data_out_b[47:16]),           //命令数据
 
-    output      [1:0]       Sdram_index,            //读写SDRAM的索引       
-    output reg  [1:0]       read_ch,                //读端口选择信号
-    output reg  [1:0]       write_ch,               //写端口选择信号
-    output      [31:0]      sd_card_bmp_read_addr,  //SD卡的读地址
+.Sdram_index            (SDRAM_index),            //读写SDRAM的索引       
+.read_ch                (read_ch),                //读端口选择信号
+.write_ch               (write_ch),               //写端口选择信号
+.sd_card_bmp_read_addr  (sd_card_bmp_read_addr)   //SD卡的读地址
 );
-
-
-
-
-
-
-
 
 
 endmodule
